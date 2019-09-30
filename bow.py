@@ -101,8 +101,8 @@ def preprocess_and_split_to_tokens(sentences):
     :return: array_like objects of array_like objects of tokens.
         e.g., [["I", "like", "apples"], ["I", "love", "python3"]]
     """
-    stopwords_list = ['i', 'br', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now']
-    return [filter(lambda x: x not in stopwords_list, re.sub(r'[^a-z0-9]+', ' ', sentence.lower()).split(' ')) for sentence in sentences]
+    stopwords_list = ['i', 'br', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now', '']
+    return [list(filter(lambda x: x not in stopwords_list, re.sub(r'[^a-z0-9]+', ' ', sentence.lower()).split(' '))) for sentence in sentences]
 
 def create_bow(sentences, vocab=None, msg_prefix="\n"):
     """Make the Bag-of-Words model from the sentences, return (vocab, bow_array)
@@ -120,25 +120,18 @@ def create_bow(sentences, vocab=None, msg_prefix="\n"):
     """
     print("{} Bow construction".format(msg_prefix))
     tokens_per_sentence = preprocess_and_split_to_tokens(sentences)
-    flattened_list = [y for x in tokens_per_sentence for y in x]
-    flattened_set_list = list(set(flattened_list))
     if vocab is None:
         print("{} Vocab construction".format(msg_prefix))
+        flattened_list = [y for x in tokens_per_sentence for y in x]
+        flattened_set_list = list(set(flattened_list))
         vocab = {k:v for v,k in enumerate(flattened_set_list)}
-    missing_items = flattened_set_list - vocab.keys()
-    """
-    if missing_items:
-        max_key = max(vocab.items(), key=operator.itemgetter(1))[0]
-        max_idx = vocab[max_key]
-        print("max_idx", max_idx)
-        for delta, item in enumerate(missing_items):
-            vocab[item] = max_idx + delta + 1
-    """
-    bow_array = [[0]*len(vocab)] * len(sentences)
-    for idx, sentence in enumerate(tokens_per_sentence):
-        for word in sentence:
-            if vocab.get(word):
-                bow_array[idx][vocab[word]] += 1
+    bow_array = []
+    for sentence_word_list in tokens_per_sentence:
+        bow_array_one = [0] * len(vocab)
+        for word in sentence_word_list:
+            if vocab.get(word) is not None:
+                bow_array_one[vocab[word]] += 1
+        bow_array.append(bow_array_one)
     return (vocab, bow_array)
 
 
@@ -161,17 +154,9 @@ def run(test_xs=None, test_ys=None, num_samples=10000, verbose=True):
 
     # You can see hyper-parameters (train_kwargs) that can be tuned in the document below.
     #   https://scikit-learn.org/stable/modules/classes.html.
-    #pipe = Pipeline([('classifier', RandomForestClassifier())])
-    
-    #param_grid = [{'classifier': [LogisticRegression()], 'classifier__penalty' : ['l2'], 'classifier__solver' : ['saga']},{'classifier' : [RandomForestClassifier()]}]
     #train_kwargs = dict(verbose=1, penalty='l2', solver="saga") # liblinear, saga
     #clf = LogisticRegression(**train_kwargs)
-    #grid_obj = GridSearchCV(pipe, param_grid=param_grid, cv=2, verbose=True)#, n_jobs=-1)
-    #grid_obj = grid_obj.fit(train_bows, train_ys)
-    #clf = grid_obj.best_estimator_
-    #clf = Perceptron(penalty='l2', shuffle=True, verbose=1, class_weight='balanced', alpha=0.0001, eta0=1.0, random_state=0, tol=0.001)
-    #clf = MultinomialNB()
-    clf = MLPClassifier(activation='relu', solver='adam', hidden_layer_sizes=(2,), tol=0.000000001,verbose=1)
+    clf = MLPClassifier(activation='relu', solver='adam', hidden_layer_sizes=(3,), verbose=1, alpha=0.01, tol=0.001)
     clf.fit(train_bows, train_ys)
     assert hasattr(clf, "predict")
     # Create bow representation of validation set
