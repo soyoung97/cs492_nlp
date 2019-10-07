@@ -7,4 +7,5 @@ def make_float(val):
     return float(val)
 string_values = [[make_float(val) for val in line.split('  ')] for line in lines][:-1]
 
+f.close()
 #print(string_values) # should print out 4423 * 500 float matrix
