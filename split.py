@@ -1,6 +1,3 @@
-import pandas as pd
-
-
 f= open("termDocMatrix.txt", 'r')
 whole_file = f.read()
 lines = whole_file.split('\n')
